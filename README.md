@@ -8,14 +8,19 @@ written in C++ with use of OpenCV 3+ library.
 
 The program is demoed on scenes from several Southern California locations in the video here.
 
+
 ### Software and Library Requirements
 * OpenCV 3.2.0
 * a C++ compiler
 * CMake 3.8.1 or higher if you are generating build files with the CMakeLists.txt script.
 
+
 ## Goals
 This program implements a common Computer Vision "recognition" workflow for videos 
-in the application to near-shore ocean wave recognition, and is fast enough to run in realtime.
+through application to near-shore ocean wave recognition, and is fast enough to run in realtime.
+
+Wave recognition has uses in higher-level objectives such as automatic wave period, frequency, and size determination, as well as region-of-interest definition for human activity recognition.
+
 
 ## Key Processes
 The general vision-based workflow proceeds from detection, to tracking, and then recognition<sup>[1](#myfootnote1)</sup>.
@@ -26,94 +31,63 @@ The process in this program is thus:
 4. Recognition of objects: Classification of waves based on their temporal dynamics.
 
 
-<!---
-
 ## Program Architecture
-The model in this demo is a multi-layer architecture consisting of alternating convolutions and nonlinearities.
-These layers are followed by fully connected layers leading into a softmax classifier. 
-The model follows the architecture described by [Alex Krizhevsky](https://papers.nips.cc/paper/4824-imagenet-classification-with-deep-convolutional-neural-networks.pdf).
+In accordance with the general comupter vision recognition workflow for objects in videos, the program is split into four modules (preprocessing, detection, tracking, and the 'Wave' class) in addition to main().  Module functions are declared and described in their header files (\*.hpp), with implementation and usage in the associated source files (\*.cpp).
 
-This model achieves a peak performance of about 95% accuracy in about an hour on a CPU. 
 
 ## Code Organization
-
 File | Purpose
 ------------ | -------------
-surferdetection_input.py |	Reads the SURFERCOUNTING binary file format.
-surferdetection.py |	Builds the SURFERCOUNTING model.
-surferdetection_train.py	| Trains a SURFERCOUNTING model on a CPU.
-surferdetection_eval.py |	Evaluates the predictive performance of a SURFERCOUNTING model.
-surferdetection_augmentation.py	| Data augmentation routine for SURFERCOUNTING images.
-surferdetection_predict.py |	Makes predictions on unseen images.
-surferdetection_predictscene.ipynb |	iPython Notebook for building full scene visualizations of predictions.
-
-## SURFERDETECTION Model
-
-The SURFERDETECTION network is largely contained in surferdetection.py. 
-
-* Model inputs: inputs() and distorted_inputs() add operations that read and preprocess SURFERDETECTION images for evaluation and training, respectively.
-* Model prediction: inference() adds operations that perform inference, i.e. classification, on supplied images.
-* Model training: loss(), accuracy(), and train() add operations that compute the loss, training accuracy, gradients, variable updates and visualization summaries.
+include/wave_objects.hpp |	Declaration of the Wave class and associated data members and member functions.
+include/preprocessing.hpp |	Declaration of preprocessing functions for frames of an OpenCV VideoReader object.
+include/detection.hpp |	Declaration of wave detection functions from preprocessed frames of an OpenCV VideoWriter object.
+include/tracking.hpp | Declaration of wave tracking functions from preprocessed frames of an OpenCV VideoWriter object.
+src/wave_objects.cpp |	Definition and construction of the Wave object, and Wave get/set methods.
+src/preprocessing.cpp |	Defintions of the frame preprocessing functions. Preprocessing downsizes full frames, applys Mixture of Gaussians mask, and denoises with morphological operators.
+src/detection.cpp	| Defintions of the Wave detection functions. Detection routine search for contours, filters contours, and returns Wave objects.
+src/tracking.cpp |	Defintions of the Wave tracking functions. Tracking routine defines a search region of interest for a Wave object and identifies its representation in future frames.  Updates Wave data as necessary.  Includes several clean-up functions.
+main.cpp |	Main implementation of the Multiple Wave Tracking program. Implements preprocessing, detection, and tracking functions, as well as input and output handling.
+scenes/ | A directory of sample videos for the Multiple Wave Tracking program.
+CMakeLists.txt | Helper CMake script to generate build files for compilation.
 
 
-**Data** 
+## Multiple Wave Tracking Model
 
-You will need to obtain the tarball from the author before beginning training. 
+Main() implements the recognition workflow above. The following briefly outlines model choices.  Details can be found in ["Model Details"](##ModelDetails) below.
 
-**PLEASE PLACE THE TAR.GZ FILE INSIDE THE 'SURFERCOUNTING_DATA' DIRECTORY!**
-
-Following TF's lead, we augment images inside 16 separate threads which continuously fill a TensorFlow queue.
-However, augmentation uses external Numpy functions in surferdetector_augmentation.py. 
-
-* Images are normalized to [0,1].
-* Images are randomly flipped from left to right.
-* Images are randomly rotated through [-12,12} degrees.
-* X and Y axis are randomly scaled independently through [0.80, 1.0] percent.
-* Rescaled images are randomly translated within a patch, while still preserving all original pixels.
+* Preprocessing: Input frames are downsized by a factor of four for analysis.  Background modeling is performed using a Mixture-of-Gaussians model with 5 Gaussians per pixels and a background history of 300 frames, resulting in a binary image in which background is represented by values of 255 and foreground as 0.  A square denoising kernel of 5x5 pixels is applied pixel-wise to the binary image to remove features that are too small to be considered.
+* Detection: Contour-finding is applied to the denoised image to identify all forground objects.  These contours are filtered for both area and shape using contour moments, resulting in the positive identification of large, oblong shapes in the scene.  These contours are converted to Wave objects and passed to the tracking routine.
+* Tracking: A region-of-interest is defined for each wave in which we expect the wave to exist in successive frames.  The wave's representation is captured and its dynamics are calculated.  We use two dynamics to determine whether or not the tracked object is indeed a wave: mass and displacement.  Mass is calculated by weighting pixels equally and performing a simple count.  Displacement is measured by calculating the orthogonal displacement of the wave's center-of-mass relative to its original major axis.
+* Recognition: We accept an object as a wave if its mass and orthogonal displacement exceed user-defined thresholds.  In this manner, we can eliminate objects that would otherwise be identified as waves in static frames.
 
 
-**Model Prediction**
+## Data and Assumptions
 
-The prediction part of the model is constructed by the inference() function which adds operations to compute the logits of the predictions. 
-This part of the model is organized as follows:
+In order to use tracking inference in the classification of waves, we must use static postion videos as input to the program.  Included in the scene directory are three videos from different scenes that can be used to test the Multiple Wave Tracking program.  These videos are 
+1280 x 720 pixels and encoded with the mp4 codec.  Please note that if you use your own videos, you may have to re-encode your videos
+to play nice with the OpenCV library.  A common tool for handling video codecs is the [FFMEG library](https://www.ffmpeg.org/).
 
-Layer Name | Description
------------- | -------------
-conv1	| convolution and "leaky" rectified linear activation.
-pool1	| overlapping max pooling.
-norm1	| local response normalization.
-conv2	| convolution and "leaky" rectified linear activation.
-norm2	| local response normalization.
-pool2	| overlapping max pooling.
-local3 | fully connected layer with rectified linear activation.
-local4	| fully connected layer with rectified linear activation.
-softmax_linear	| linear transformation to produce logits.
+As a vision-based project, this program performs best on scenes in which the object of interest (the wave) is sufficiently separated from other objects (i.e. there is no occlusion or superimposition).  This assumption is fair for the wave object as ocean physics dictate that near-shore waves generally have consistent periods of separation, from the processes of assimilation, imposition, and interference that take place a great distance from shore.
+
+The inherent assumption in the program of delineated waves is best achieved with high elevation or aerial cameras.
 
 
-**Model Training**
-
-We train the Sufter Detection model "online" (that is, one image at a time as opposed to "batch
-processing").  Exploding gradients are checked with leaky RELUs and small positive bias initialization.
-
-For regularization, we apply weight decay losses to all learned variables as well as local response normalization
-after the convolutional layers. 
-
-The Surfer Detection model uses binary softmax regression ("surfer present" or "surfer absent"). 
-
-The objective function for the model is the sum of the cross entropy loss and 
-all these weight decay terms,  as returned by the loss() function.
-
-Training can be "babysat" using Google's [Tensorboard](https://www.tensorflow.org/how_tos/summaries_and_tensorboard/),
-by entering the the following command at the commandline after training has commenced:
-
-    tensorboard --logdir=/surferdetection/surferdetection_train
+## Model Discussion
 
 
-**Launching and Training the Model**
 
-Launch training from the commandline with the script surferdetection_train.py.
 
-    python surferdetection_train.py
+
+## Compiling and Launching the Model
+
+The source files for this project must be compiled prior to execution.  A script is provided for generating build files using CMake as CMakeLists.txt, though it is not necessary to compile with this method.  The dependency for compiling the Multiple Wave Tracking program is the OpenCV library, which can be obtained [here](http://opencv.org/releases.html).  This project uses OpenCV version 3.2.0.  You will need to place the OpenCV header and library directories in your compiler's search path.
+
+After compiling the Multiple Wave Tracking executable, you can launch the program from the command line.  For example:
+
+> ./mwt_cpp some_source_video.mp4
+
+
+<!---
 
 You should see output like this:
 
@@ -137,7 +111,7 @@ This evaluation simply gives accuracy on the evaluation set as a percentage.  Yo
 The training script calculates the moving average version of all learned variables. The evaluation script substitutes all learned model 
 parameters with the moving average version. This substitution boosts model performance at evaluation time.
 
-**Visualize Unseen Scenes**
+**Visualizing Recognition**
 
 The Jupyter Notebook file 'surferdetection_predictscene.ipynb' has been provided to help you visualize prediction on unseen scenes.
 This notebook will utilize the surferdetection_predict.py file that makes use of a fully-trained surfer detector model in the surferdetection_restore directory.
