@@ -80,30 +80,24 @@ After compiling the Multiple Wave Tracking executable, you can launch the progra
 
 > citrusvanila build $ ./mwt_cpp some_video_with_waves.mp4
 
-
-<!---
-
 You should see output like this:
 
-    Filling queue with 5000 SURFERCOUNTING images before starting to train. This will take a few minutes.
-    2016-11-04 11:45:45.927302: step 0, loss = 0.57 (47.3 examples/sec; 0.024 sec/batch)
-    2016-11-04 11:45:49.133065: step 50, loss = 0.86 (52.8 examples/sec; 0.025 sec/batch)
+    Starting analysis of 840 frames.
+    100 frames complete. (122 frames/sec; 0 sec/frame)
+    200 frames complete. (131 frames/sec; 0.005 sec/frame)
     
-The script reports the loss and accuracy on the image every 50 steps, as well as the speed at which the last image was processed.
+The program reports its status every 100 frames, as well as the performance of the program.
 
-surferdetection_train.py saves all model parameters in checkpoint files every 1000 steps but it does not evaluate the model. 
-The checkpoint file will be used by surferdetection_eval.py to measure the predictive performance.
+The program will report simple statistics at the conclusion of analysis, like the following:
 
-Launch periodic evaluation (set to evaluate the full validation set every 2 minutes) from the commandline after training has commenced:
+    Program complete.
+    Program took 5950 milliseconds.
+    Program speed: 168 frames per second.
+    2 wave(s) found.
 
-    python surferdetection_eval.py
+A log of the tracking routine is written to "wave_log.json" for a frame-by-frame breakdown of the program.
 
-This evaluation simply gives accuracy on the evaluation set as a percentage.  You should see an output such as this:
-
-    2016-11-06 08:30:44.391206: precision @ 1 = 0.860
-
-The training script calculates the moving average version of all learned variables. The evaluation script substitutes all learned model 
-parameters with the moving average version. This substitution boosts model performance at evaluation time.
+<!---
 
 **Visualizing Recognition**
 
