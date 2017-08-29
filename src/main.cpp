@@ -98,6 +98,33 @@ void WaveDebugger(std::vector<wave_obj::Wave> waves)
 }
 
 
+// Simple status update to stdio.
+// Args:
+//   frame_num: frame being analyzed
+//   tot_frames: total number of frames in the sequence
+// Operation:
+//   Outputs status to stdio based on frame count.
+void status_update(int frame_num, int tot_frames,
+                   high_resolution_clock::time_point begin_time,
+                   high_resolution_clock::time_point curr_time)
+{
+    if (frame_num == 1)
+        std::cout << "Starting analysis of " << tot_frames <<
+        " frames." << std::endl;
+    
+    else if (frame_num % 100 == 0)
+        std::cout << std::setprecision(3) << frame_num << " frames complete. ("
+        << 1000 * static_cast<double>(frame_num) /
+        duration_cast<milliseconds>(curr_time-begin_time).count() <<
+        " frames/sec; " <<
+        duration_cast<milliseconds>(curr_time-begin_time).count() / 1000 /
+        static_cast<double>(frame_num) << " sec/frame)" <<
+        std::endl;
+    else if (frame_num == tot_frames)
+        std::cout << "End of video reached successfully." << std::endl;
+}
+
+
 int main(int argc, const char** argv)
 {
     // ---INPUT---
@@ -146,6 +173,10 @@ int main(int argc, const char** argv)
         // Read into frame and check for error.
         cap >> frame;
         if (frame.empty()) {break;}
+        
+        // Provide status update to stdio.
+        status_update(frame_number, number_of_frames,
+                      t1, high_resolution_clock::now());
 
         // ---PREPROCESS---
         preprocessing::Preprocess(frame, binary_image, pMOG,
