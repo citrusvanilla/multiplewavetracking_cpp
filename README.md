@@ -1,4 +1,4 @@
-# Vision-Based Near-Shore Wave Tracking and Recognition for High Elevation and Aerial Video Cameras, using C++ and OpenCV
+# Vision-Based Near-Shore Wave Tracking and Recognition for High Elevation and Aerial Video Cameras (C++, OpenCV)
 
 <!---
 ![Surfer Detection Example](http://i.imgur.com/QaWJIU3.jpg?1)
@@ -15,24 +15,21 @@ The program is demoed on scenes from several Southern California locations in th
 * CMake 3.8.1 or higher if you are generating build files with the CMakeLists.txt script.
 
 
-## Goals
-This program implements a common Computer Vision "recognition" workflow for videos 
-through application to near-shore ocean wave recognition, and is fast enough to run in realtime.
+## High-level View
+This program implements a method of near-shore ocean wave recognition through a common Computer Vision "recognition" workflow for video sequences, and is fast enough to run in realtime.
+
+The general object recognition workflow for video sequences proceeds from detection, to tracking, and then recognition<sup>[1](#myfootnote1)</sup>.
+The process in this program is thus:
+1. **Preprocessing of video**: background modeling of the maritime environment and foreground extraction of near-shore waves.
+2. **Detection of objects**: Identification and localization of waves in the scene.
+3. **Tracking of objects**: Identity-preserving localization of detected waves through successive video frames for the capture of object dynamics.
+4. **Recognition of objects**: Classification of waves based on their dynamics.
 
 Wave recognition has uses in higher-level objectives such as automatic wave period, frequency, and size determination, as well as region-of-interest definition for human activity recognition.
 
 
-## Key Processes
-The general vision-based workflow proceeds from detection, to tracking, and then recognition<sup>[1](#myfootnote1)</sup>.
-The process in this program is thus:
-1. Preprocessing of video: background modeling of the maritime environment and foreground extraction of near-shore waves.
-2. Detection of objects: Identification and localization of waves in the scene.
-3. Tracking of objects: Identity-preserving localization of detected waves through successive video frames for the capture of wave dynamics.
-4. Recognition of objects: Classification of waves based on their temporal dynamics.
-
-
 ## Program Architecture
-In accordance with the general comupter vision recognition workflow for objects in videos, the program is split into four modules (preprocessing, detection, tracking, and the 'Wave' class) in addition to main().  Module functions are declared and described in their header files (\*.hpp), with implementation and usage in the associated source files (\*.cpp).
+In accordance with the general comupter vision recognition workflow for objects in videos, the program is split into four modules (preprocessing, detection, tracking, and the 'Wave' class), in addition to main().  Module functions are declared and described in their header files (\*.hpp), with implementation and usage in the associated source files (\*.cpp).
 
 
 ## Code Organization
@@ -51,34 +48,32 @@ scenes/ | A directory of sample videos for the Multiple Wave Tracking program.
 CMakeLists.txt | Helper CMake script to generate build files for compilation.
 
 
-## Multiple Wave Tracking Model
+## The Multiple Wave Tracking Model, in Short
 
-Main() implements the recognition workflow above. The following briefly outlines model choices.  Details can be found in ["Model Details"](##ModelDetails) below.
+Main() implements the recognition workflow from above. The following bullets list the modeling operation employed in this program, and a full discussion on model choices can be found in ["Model Details"](##ModelDetails) below.
 
-* **Preprocessing**: Input frames are downsized by a factor of four for analysis.  Background modeling is performed using a Mixture-of-Gaussians model with 5 Gaussians per pixels and a background history of 300 frames, resulting in a binary image in which background is represented by values of 255 and foreground as 0.  A square denoising kernel of 5x5 pixels is applied pixel-wise to the binary image to remove features that are too small to be considered.
-* **Detection**: Contour-finding is applied to the denoised image to identify all forground objects.  These contours are filtered for both area and shape using contour moments, resulting in the positive identification of large, oblong shapes in the scene.  These contours are converted to Wave objects and passed to the tracking routine.
-* **Tracking**: A region-of-interest is defined for each wave in which we expect the wave to exist in successive frames.  The wave's representation is captured and its dynamics are calculated.  We use two dynamics to determine whether or not the tracked object is indeed a wave: mass and displacement.  Mass is calculated by weighting pixels equally and performing a simple count.  Displacement is measured by calculating the orthogonal displacement of the wave's center-of-mass relative to its original major axis.
-* **Recognition**: We accept an object as a wave if its mass and orthogonal displacement exceed user-defined thresholds.  In this manner, we can eliminate objects that would otherwise be identified as waves in static frames.
+* **Preprocessing**: Input frames are downsized by a factor of four for analysis.  Background modeling is performed using a Mixture-of-Gaussians model with five Gaussians per pixels and a background history of 300 frames, resulting in a binary image in which background is represented by values of 255 and foreground as 0.  A square denoising kernel of 5x5 pixels is applied pixel-wise to the binary image to remove foreground features that are too small to be considered objects of interest.
+* **Detection**: Contour-finding is applied to the denoised image to identify all forground objects.  These contours are filtered for both area and shape using a contour's moments, resulting in the return of large, oblong shapes in the scene from a filtering operation.  These contours are converted to Wave objects and passed to the tracking routine.
+* **Tracking**: A region-of-interest is defined for each potential wave object in which we expect the wave to exist in successive frames.  The wave's representation is captured using simple linear search through the ROI and its dynamics are updated according to center-of-mass measurements.
+* **Recognition**: We use two dynamics to determine whether or not the tracked object is indeed a positive instance of a wave: mass and displacement.  Mass is calculated by weighting pixels equally and performing a simple count.  Displacement is measured by calculating the orthogonal displacement of the wave's center-of-mass relative to its original major axis.  We accept an object as a true instance of a wave if its mass and orthogonal displacement exceed user-defined thresholds.
 
 
 ## Data and Assumptions
 
-In order to use tracking inference in the classification of waves, we must use static postion videos as input to the program.  Included in the scene directory are three videos from different scenes that can be used to test the Multiple Wave Tracking program.  These videos are 
-1280 x 720 pixels and encoded with the mp4 codec.  Please note that if you use your own videos, you may have to re-encode your videos
-to play nice with the OpenCV library.  A common tool for handling video codecs is the [FFMEG library](https://www.ffmpeg.org/).
+In order to use tracking inference in the classification of waves, we must use static video cameras (e.g. surveillance cameras) as input to the program.  Included in the scene directory are three videos from different scenes that can be used to test the Multiple Wave Tracking program.  These videos are 1280 x 720 pixels and encoded with the mp4 codec.  Please note that if you use your own videos, you may have to re-encode your videos to play nice with the OpenCV library.  A common tool for handling video codecs is the [FFMEG library](https://www.ffmpeg.org/).
 
-As a vision-based project, this program performs best on scenes in which the object of interest (the wave) is sufficiently separated from other objects (i.e. there is no occlusion or superimposition).  This assumption is fair for the wave object as ocean physics dictate that near-shore waves generally have consistent periods of separation, from the processes of assimilation, imposition, and interference that take place a great distance from shore.
+As a vision-based project, this program performs best on scenes in which the object of interest (the wave) is sufficiently separated from other objects (i.e. there is no occlusion or superimposition).  This assumption is fair for the wave object as ocean physics dictate that near-shore waves generally have consistently delineated periods of inter-arrival times, due to the physical processes of assimilation, imposition, and interference that take place a great distance from shore.
 
-The inherent assumption in the program of delineated waves is best achieved with high elevation or aerial cameras.
+To this end, a camera is able to pronouce this periodicity on the focal plane simply by increasing its own elevation from the ocean surface plane.  That is- the higher the elevation of the camera, the better the separation in the the frame.
 
 
 ## Compiling and Launching the Model
 
 The source files for this project must be compiled prior to execution.  A script is provided for generating build files using CMake as CMakeLists.txt, though it is not necessary to compile with this method.  The dependency for compiling the Multiple Wave Tracking program is the OpenCV library, which can be obtained [here](http://opencv.org/releases.html).  This project uses OpenCV version 3.2.0.  You will need to place the OpenCV header and library directories in your compiler's search path.  You may reference [this documentation](http://docs.opencv.org/3.0-last-rst/doc/tutorials/introduction/linux_gcc_cmake/linux_gcc_cmake.html) for a refresher on compiling OpenCV projects with G++ and CMake.
 
-After compiling the Multiple Wave Tracking executable, you can launch the program from the command line after navigating to the directory containing the executable.  For example:
+After compiling the Multiple Wave Tracking program, you can launch the program from the command line after navigating to the directory containing the executable.  For example:
 
-> citrusvanila build $ ./mwt_cpp some_video_with_waves.mp4
+> joe_bloggs build $ ./mwt_cpp some_video_with_waves.mp4
 
 You should see output like this:
 
