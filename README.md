@@ -108,9 +108,9 @@ And that's it!  Please contact the author for gaining access to source data, tro
 
 ## Model Discussion
 
-**What exactly is a "wave"?**
+### What exactly is a "wave"?
 
-![Examples of Near-Shore Waves](http://i.imgur.com/yiUGein.jpg)
+![Examples of Near-Shore Waves](http://i.imgur.com/4ASgzrn.jpg)
 
 When considering the **static** representation of a wave in color space, we make use of the high contrast between a wave that is broken and the surrounding water environment. For our program, a wave is denoted by the presence of sea foam when it has "broken".  Foam as a physical object is the trapping of air inside liquid bubbles whose refractive properties give the foam a holistic color approaching white.  This is contrasted with the ocean surface that does not have such refractive properties and rather traps light such that its intensity is much lower than that of foam. Therefore, we when use computer vision to search a maritime image for a wave, we are really looking for the signature of a wave in the form of sea foam.
 
@@ -118,9 +118,9 @@ Further, a "wave" in our case has an assumed behaviour of **dynamic** movement t
 
 This representation of a wave in the time domain allows us to abstract the near-shore wave identification problem into a recognition-through-tracking formulation.
 
-**Preprocessing** 
+### Preprocessing
 
-![Preprocessed Frame](http://i.imgur.com/sFXsZJj.jpg)
+![Preprocessed Frame](http://i.imgur.com/NDMIwOF.jpg)
 
 In our videos of maritime environments, waves are surely the largest objects present and thus our downsizing of input videos by a factor of four (or greater) is acceptable. Background modeling, however, for these environments is very difficult endeavor even with static cameras due to the dynamic nature of liquids.
 
@@ -132,21 +132,21 @@ Despite the flexibility of the MOG model, there will still be residual errors in
  
 We note in passing that the EM algorithm that is performed on a per-pixel basis contributes significantly to the overall expense of background modeling in the program, estimated to be about 50% of the total CPU resources.  
 
-**Detection**
+### Detection
 
-![Detection and Filtering](http://i.imgur.com/KNO8eI3.jpg)
+![Detection and Filtering](http://i.imgur.com/nNhNtzW.jpg)
 
 The resultant frame from the preprocessing module is a binary image in which the background is represented by one value while the foreground is represented by another.  In our case, we are left with an image in which waves are represented as sea foam in the foreground.  Detection is intended to localize these shapes and to subject them to thresholding that further eliminates false instances.
 
 We use the contour finding method from Suzuki and Abe<sup>[4](#myfootnote4)</sup> that employs a traditional border tracing algorithm to return shapes and locations.  These contours are filtered for area (to eliminate foreground objects that are too small to be considered) and inertia (to eliminate foreground objects whose shape does not match that of a breaking wave).  We are left with large, oblong object contours which we convert to Wave objects and pass to the tracking routine.
 
-**Tracking**
+### Tracking
 
 ![Tracking Waves](http://i.imgur.com/OT51ZTr.jpg)
 
 We can take advantage of two assumptions about waves that eliminate our reliance on traditional sample-based tracking methologies and their associated probabilistic components.  The first is that waves are highly periodic in arrival and therefore will not exhibit occlusion or superimposition.  The second assumption is about the wave's dynamics; specifically, that a wave's movement can be desribed by its displacement orthogonal to the axis along which the wave was first identified in the video sequence.  These two assumptions allow us to confidently define a search region in the next frame using just a center-of-mass estimate in the current frame, and reduces our search space for the wave's position in successive frames to a search along one dimension.  The reduction in dimensionality of the search space allows us to cheaply and exhaustively search for a global position that describes our tracked wave in successive frames.  We do not need to rely on sample-based tracking methods that are susceptible to drift and/or suboptimal identifications.
 
-**Recognition**
+### Recognition
 
 ![Recognition](http://i.imgur.com/uUTDLj3.jpg)
 
@@ -155,7 +155,7 @@ Tracking allows us to incorporate dynamics into classification of waves.  We use
 By introducing tracking, we are able to confidently classify waves in videos by combining simple bilevel representations of the waves with cheaply-calculated dynamics.  If we were to resort to bilevel detection methods for waves without employing dynamics, our methods would be susceptible to false positives from many sources.  Certainly a large boat might be an example of a false positive, but harder examples that should be negatively classified include wave-types that have similar contour representations to ocean waves, including "shorebreak"-type waves that break on the shore, and "whitecapping"-type waves that have the appearance of breaking due to near-shore winds.  Neither of these meet our definition of an ocean wave.
 
 
-### Footnotes
+#### Footnotes
 <a name="myfootnote1">1</a>: [Bodor, Robert, Bennett Jackson, and Nikolaos Papanikolopoulos. "Vision-based human tracking and activity recognition." Proc. of the 11th Mediterranean Conf. on Control and Automation. Vol. 1. 2003.](http://mha.cs.umn.edu/Papers/Vision_Tracking_Recognition.pdf)
 
 <a name="myfootnote2">2</a>: [KaewTraKulPong, Pakorn, and Richard Bowden. "An improved adaptive background mixture model for real-time tracking with shadow detection." Video-based surveillance systems 1 (2002): 135-144.](https://link.springer.com/chapter/10.1007/978-1-4615-0913-4_11)
