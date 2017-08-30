@@ -1,13 +1,12 @@
 # Vision-Based Near-Shore Wave Tracking and Recognition for High Elevation and Aerial Video Cameras (C++, OpenCV)
 
-<!---
-![Surfer Detection Example](http://i.imgur.com/QaWJIU3.jpg?1)
---->
+![Frame Grab](http://i.imgur.com/ev8KUtD.jpg)
 This repository contains a program for modeling, detecting, tracking, and recognizing near-shore ocean waves, 
 written in C++ with use of OpenCV 3+ library.
 
+<!---
 The program is demoed on scenes from several Southern California locations in the video here.
-
+--->
 
 ## Software and Library Requirements
 * OpenCV 3.2.0
