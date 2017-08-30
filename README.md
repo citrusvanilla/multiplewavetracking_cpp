@@ -9,7 +9,7 @@ written in C++ with use of OpenCV 3+ library.
 The program is demoed on scenes from several Southern California locations in the video here.
 
 
-### Software and Library Requirements
+## Software and Library Requirements
 * OpenCV 3.2.0
 * a C++ compiler
 * CMake 3.8.1 or higher if you are generating build files with the CMakeLists.txt script.
@@ -22,7 +22,7 @@ The general object recognition workflow for video sequences proceeds from detect
 The process in this program is thus:
 1. **Preprocessing of video**: background modeling of the maritime environment and foreground extraction of near-shore waves.
 2. **Detection of objects**: Identification and localization of waves in the scene.
-3. **Tracking of objects**: Identity-preserving localization of detected waves through successive video frames for the capture of object dynamics.
+3. **Tracking of objects**: Identity-preserving localization of detected waves through successive video frames for the capture of wave dynamics.
 4. **Recognition of objects**: Classification of waves based on their dynamics.
 
 Wave recognition has uses in higher-level objectives such as automatic wave period, frequency, and size determination, as well as region-of-interest definition for human activity recognition.
@@ -53,7 +53,7 @@ CMakeLists.txt | Helper CMake script to generate build files for compilation.
 Main() implements the recognition workflow from above. The following bullets list the modeling operation employed in this program, and a full discussion on model choices can be found in ["Model Details"](##ModelDetails) below.
 
 * **Preprocessing**: Input frames are downsized by a factor of four for analysis.  Background modeling is performed using a Mixture-of-Gaussians model with five Gaussians per pixels and a background history of 300 frames, resulting in a binary image in which background is represented by values of 255 and foreground as 0.  A square denoising kernel of 5x5 pixels is applied pixel-wise to the binary image to remove foreground features that are too small to be considered objects of interest.
-* **Detection**: Contour-finding is applied to the denoised image to identify all forground objects.  These contours are filtered for both area and shape using a contour's moments, resulting in the return of large, oblong shapes in the scene from a filtering operation.  These contours are converted to Wave objects and passed to the tracking routine.
+* **Detection**: Contour-finding is applied to the denoised image to identify all forground objects.  These contours are filtered for both area and shape using a contour's moments, resulting in the return of large, oblong shapes in the scene.  These contours are converted to Wave objects and passed to the tracking routine.
 * **Tracking**: A region-of-interest is defined for each potential wave object in which we expect the wave to exist in successive frames.  The wave's representation is captured using simple linear search through the ROI and its dynamics are updated according to center-of-mass measurements.
 * **Recognition**: We use two dynamics to determine whether or not the tracked object is indeed a positive instance of a wave: mass and displacement.  Mass is calculated by weighting pixels equally and performing a simple count.  Displacement is measured by calculating the orthogonal displacement of the wave's center-of-mass relative to its original major axis.  We accept an object as a true instance of a wave if its mass and orthogonal displacement exceed user-defined thresholds.
 
@@ -64,7 +64,7 @@ In order to use tracking inference in the classification of waves, we must use s
 
 As a vision-based project, this program performs best on scenes in which the object of interest (the wave) is sufficiently separated from other objects (i.e. there is no occlusion or superimposition).  This assumption is fair for the wave object as ocean physics dictate that near-shore waves generally have consistently delineated periods of inter-arrival times, due to the physical processes of assimilation, imposition, and interference that take place a great distance from shore.
 
-To this end, a camera is able to pronouce this periodicity on the focal plane simply by increasing its own elevation from the ocean surface plane.  That is- the higher the elevation of the camera, the better the separation in the the frame.
+To this end, a camera is able to pronouce this periodicity on the focal plane simply by increasing its own elevation from the ocean surface plane.  That is- the higher the elevation of the camera, the better the separation in the frame.
 
 
 ## Compiling and Launching the Model
@@ -108,7 +108,9 @@ And that's it!  Please contact the author for gaining access to source data, tro
 
 ## Model Discussion
 
-**What exactly is "a wave"?**
+**What exactly is a "wave"?**
+
+![Examples of Near-Shore Waves](http://i.imgur.com/yiUGein.jpg)
 
 When considering the **static** representation of a wave in color space, we make use of the high contrast between a wave that is broken and the surrounding water environment. For our program, a wave is denoted by the presence of sea foam when it has "broken".  Foam as a physical object is the trapping of air inside liquid bubbles whose refractive properties give the foam a holistic color approaching white.  This is contrasted with the ocean surface that does not have such refractive properties and rather traps light such that its intensity is much lower than that of foam. Therefore, we when use computer vision to search a maritime image for a wave, we are really looking for the signature of a wave in the form of sea foam.
 
@@ -117,6 +119,8 @@ Further, a "wave" in our case has an assumed behaviour of **dynamic** movement t
 This representation of a wave in the time domain allows us to abstract the near-shore wave identification problem into a recognition-through-tracking formulation.
 
 **Preprocessing** 
+
+![Preprocessed Frame](http://i.imgur.com/sFXsZJj.jpg)
 
 In our videos of maritime environments, waves are surely the largest objects present and thus our downsizing of input videos by a factor of four (or greater) is acceptable. Background modeling, however, for these environments is very difficult endeavor even with static cameras due to the dynamic nature of liquids.
 
@@ -130,15 +134,21 @@ We note in passing that the EM algorithm that is performed on a per-pixel basis 
 
 **Detection**
 
+![Detection and Filtering](http://i.imgur.com/KNO8eI3.jpg)
+
 The resultant frame from the preprocessing module is a binary image in which the background is represented by one value while the foreground is represented by another.  In our case, we are left with an image in which waves are represented as sea foam in the foreground.  Detection is intended to localize these shapes and to subject them to thresholding that further eliminates false instances.
 
-We use the contour finding method from Suzuki and Abe<sup>[4](#myfootnote4)</sup> that employs a traditional border tracing algorithm to return shapes and locations.  These contours are filtered for area (to eliminate foreground objects that are too small to be considered) and inertia (to eliminate foreground objects whose shape does not match that of a breaking wave).  We are left with large, oblong object contours, which we convert to Wave objects and pass to the tracking routine.
+We use the contour finding method from Suzuki and Abe<sup>[4](#myfootnote4)</sup> that employs a traditional border tracing algorithm to return shapes and locations.  These contours are filtered for area (to eliminate foreground objects that are too small to be considered) and inertia (to eliminate foreground objects whose shape does not match that of a breaking wave).  We are left with large, oblong object contours which we convert to Wave objects and pass to the tracking routine.
 
 **Tracking**
+
+![Tracking Waves](http://i.imgur.com/OT51ZTr.jpg)
 
 We can take advantage of two assumptions about waves that eliminate our reliance on traditional sample-based tracking methologies and their associated probabilistic components.  The first is that waves are highly periodic in arrival and therefore will not exhibit occlusion or superimposition.  The second assumption is about the wave's dynamics; specifically, that a wave's movement can be desribed by its displacement orthogonal to the axis along which the wave was first identified in the video sequence.  These two assumptions allow us to confidently define a search region in the next frame using just a center-of-mass estimate in the current frame, and reduces our search space for the wave's position in successive frames to a search along one dimension.  The reduction in dimensionality of the search space allows us to cheaply and exhaustively search for a global position that describes our tracked wave in successive frames.  We do not need to rely on sample-based tracking methods that are susceptible to drift and/or suboptimal identifications.
 
 **Recognition**
+
+![Recognition](http://i.imgur.com/uUTDLj3.jpg)
 
 Tracking allows us to incorporate dynamics into classification of waves.  We use two dynamics to determine whether or not the tracked object is indeed a positive instance of a wave: mass and displacement.  Mass is calculated by weighting pixels equally and performing a simple count.  Displacement is measured by calculating the orthogonal displacement of the wave's center-of-mass relative to its original major axis.  We accept an object as a true instance of a wave if its mass and orthogonal displacement exceed user-defined thresholds.
 
