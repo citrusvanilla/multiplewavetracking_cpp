@@ -109,7 +109,7 @@ And that's it!  Please contact the author for gaining access to source data, tro
 
 ![Examples of Near-Shore Waves](http://i.imgur.com/4ASgzrn.jpg)
 
-When considering the **static** representation of a wave in color space, we make use of the high contrast between a wave that is broken and the surrounding water environment. For our program, a wave is denoted by the presence of sea foam when it has "broken".  Foam as a physical object is the trapping of air inside liquid bubbles whose refractive properties give the foam a holistic color approaching white.  This is contrasted with the ocean surface that does not have such refractive properties and rather traps light such that its intensity is much lower than that of foam. Therefore, we when use computer vision to search a maritime image for a wave, we are really looking for the signature of a wave in the form of sea foam.
+When considering the **static** representation of a wave in color space, we make use of the high contrast between a wave that is broken and the surrounding water environment. For our program, a wave is denoted by the presence of sea foam when it has "broken".  Foam as a physical object is the trapping of air inside liquid bubbles whose refractive properties give the foam a holistic color approaching white.  This is contrasted with the ocean surface that does not have such refractive properties and rather traps light such that its intensity is much lower than that of foam. Therefore, we when use computer vision to search a maritime image for a wave, we are really looking for the signature of a wave in the form of sea foam.  It is important to note that one wave object can be represented by many disparate "sections" along the length of the wave.
 
 Further, a "wave" in our case has an assumed behaviour of **dynamic** movement through time.  We can take advantage of the fact that ocean waves propogating from a source travel in a direction that is orthogonal (perpendicular) to the plane tangent to its wavefront to simply describe a wave's travel with a 1-demensional value (e.g. "the wave has traveled 50 feet").
 
@@ -142,6 +142,8 @@ We use the contour finding method from Suzuki and Abe<sup>[4](#myfootnote4)</sup
 ![Tracking Waves](http://i.imgur.com/OT51ZTr.jpg)
 
 We can take advantage of two assumptions about waves that eliminate our reliance on traditional sample-based tracking methologies and their associated probabilistic components.  The first is that waves are highly periodic in arrival and therefore will not exhibit occlusion or superimposition.  The second assumption is about the wave's dynamics; specifically, that a wave's movement can be desribed by its displacement orthogonal to the axis along which the wave was first identified in the video sequence.  These two assumptions allow us to confidently define a search region in the next frame using just a center-of-mass estimate in the current frame, and reduces our search space for the wave's position in successive frames to a search along one dimension.  The reduction in dimensionality of the search space allows us to cheaply and exhaustively search for a global position that describes our tracked wave in successive frames.  We do not need to rely on sample-based tracking methods that are susceptible to drift and/or suboptimal identifications.
+
+The tracking routine also manages multiple representations of the same wave through the merging of these multiple sections into one object, as a wave can be constructed of many disparate contours.
 
 ### Recognition
 
