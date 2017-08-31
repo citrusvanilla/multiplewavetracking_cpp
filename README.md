@@ -8,7 +8,7 @@ This program is demoed on video clips from several Southern California locations
 
 ## Software and Library Requirements
 * OpenCV 3.2.0
-* a C++ compiler
+* a C++11 compiler
 * CMake 3.8.1 or higher if you are generating build files with the CMakeLists.txt script.
 
 
@@ -87,17 +87,15 @@ The program will report simple statistics at the conclusion of analysis, like th
     Program speed: 168 frames per second.
     2 wave(s) found.
 
-A log of the tracking routine is written to "wave_log.json" for a frame-by-frame breakdown of the program.
-
 <!---
+
+A log of the tracking routine is written to "wave_log.json" for a frame-by-frame breakdown of the program.
 
 **Visualizing Recognition**
 
-The Jupyter Notebook file 'surferdetection_predictscene.ipynb' has been provided to help you visualize prediction on unseen scenes.
-This notebook will utilize the surferdetection_predict.py file that makes use of a fully-trained surfer detector model in the surferdetection_restore directory.
-Launch the notebook from the commandline with the following:
+Launch the program from the commandline with the following:
 
-    ipython notebook surferdetection_predictscene.ipynb
+    c++ surfer...
 
 And that's it!  Please contact the author for gaining access to source data, troubleshooting or general comments.
 
