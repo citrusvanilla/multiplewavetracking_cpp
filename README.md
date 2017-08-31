@@ -4,9 +4,7 @@
 This repository contains a program for modeling, detecting, tracking, and recognizing near-shore ocean waves, 
 written in C++ with use of OpenCV 3+ library.
 
-<!---
-The program is demoed on scenes from several Southern California locations in the video here.
---->
+This program is demoed on video clips from several Southern California locations in a [Vimeo video here](http://vimeo.com/citrusvanilla/multiplewavetracking).
 
 ## Software and Library Requirements
 * OpenCV 3.2.0
