@@ -151,6 +151,8 @@ Tracking allows us to incorporate dynamics into classification of waves.  We use
 
 By introducing tracking, we are able to confidently classify waves in videos by combining simple bilevel representations of the waves with cheaply-calculated dynamics.  If we were to resort to bilevel detection methods for waves without employing dynamics, our methods would be susceptible to false positives from many sources.  Certainly a large boat might be an example of a false positive, but harder examples that should be negatively classified include wave-types that have similar contour representations to ocean waves, including "shorebreak"-type waves that break on the shore, and "whitecapping"-type waves that have the appearance of breaking due to near-shore winds.  Neither of these meet our definition of an ocean wave.
 
+#### Improvements
+- Wave.points_ should be an array of pointers to pixels, rather than copies of the pixels.
 
 #### Footnotes
 <a name="myfootnote1">1</a>: [Bodor, Robert, Bennett Jackson, and Nikolaos Papanikolopoulos. "Vision-based human tracking and activity recognition." Proc. of the 11th Mediterranean Conf. on Control and Automation. Vol. 1. 2003.](http://mha.cs.umn.edu/Papers/Vision_Tracking_Recognition.pdf)
