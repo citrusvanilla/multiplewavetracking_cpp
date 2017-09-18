@@ -153,6 +153,7 @@ By introducing tracking, we are able to confidently classify waves in videos by 
 
 #### Improvements
 - Wave.points_ should be an array of pointers to pixels, rather than copies of the pixels.
+- Implement object construction using separate Wave and Section classes.
 
 #### Footnotes
 <a name="myfootnote1">1</a>: [Bodor, Robert, Bennett Jackson, and Nikolaos Papanikolopoulos. "Vision-based human tracking and activity recognition." Proc. of the 11th Mediterranean Conf. on Control and Automation. Vol. 1. 2003.](http://mha.cs.umn.edu/Papers/Vision_Tracking_Recognition.pdf)
